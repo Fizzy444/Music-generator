@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-attachment: fixed;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        h1 {
+            color: #4b6cb7;
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: 2.8em;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 32px;
+            font-size: 1.1em;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #2d3748;
+            font-weight: 700;
+            font-size: 1.05em;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 20px;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 1.1em;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-input-label:hover {
+            background: #e6f1ff;
+            border-color: #4b6cb7;
+            color: #4b6cb7;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-name {
+            margin-top: 14px;
+            color: #4b6cb7;
+            font-size: 0.95em;
+            font-weight: 600;
+            text-align: center;
+            min-height: 1.4em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            background: #f8fafc;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4b6cb7;
+            box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(75, 108, 183, 0.4);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(30deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(75, 108, 183, 0.5);
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+            transform: rotate(30deg) translate(20%, 20%);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 14px rgba(75, 108, 183, 0.2);
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 28px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4b6cb7;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 18px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 36px;
+            padding: 24px;
+            background: #f0f7ff;
+            border-radius: 16px;
+            border: 1px solid #dbeafe;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result h3 {
+            color: #4b6cb7;
+            margin-bottom: 18px;
+            font-size: 1.4em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result h3::before {
+            content: '✨';
+            font-size: 1.6em;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 13px 32px;
+            background: linear-gradient(to right, #28a745, #20c997);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+            text-align: center;
+            width: 100%;
+            font-size: 1.05em;
+            letter-spacing: 0.3px;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(to right, #218838, #1ba87e);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .error {
+            display: none;
+            margin-top: 24px;
+            padding: 18px;
+            background: #fff5f5;
+            color: #c53030;
+            border-radius: 14px;
+            border: 1px solid #feb2b2;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(255, 229, 229, 0.5);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 24px;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .subtitle {
+                font-size: 1em;
+            }
+            
+            .btn {
+                padding: 14px;
+                font-size: 17px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 AI Music Generator</h1>
+        <p class="subtitle">Upload a MIDI or MP3 file and generate new music</p>
+        <p class="subtitle">Works best with MIDI</p>
+
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="midi_file">MIDI or MP3 File:</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="midi_file" name="midi_file" accept=".mid,.midi,.mp3" required>
+                    <label for="midi_file" class="file-input-label">
+                        📁 Click to select MIDI or MP3 file
+                    </label>
+                </div>
+                <div class="file-name" id="fileName"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="num_notes">Number of Notes to Generate:</label>
+                <input type="number" id="num_notes" name="num_notes" min="50" max="1000" value="300" required>
+            </div>
+
+            <button type="submit" class="btn" id="generateBtn">Generate Music</button>
+        </form>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Generating music... This may take a moment.</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <h3>Generated Music</h3>
+            <audio controls class="audio-player" id="audioPlayer">
+                <source id="audioSource" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <a href="#" class="download-btn" id="downloadBtn" download>⬇️ Download MP3</a>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('midi_file');
+        const fileName = document.getElementById('fileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const loader = document.getElementById('loader');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const generateBtn = document.getElementById('generateBtn');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileName.textContent = '✓ ' + this.files[0].name;
+            }
+        });
+
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('midi_file', fileInput.files[0]);
+            formData.append('num_notes', document.getElementById('num_notes').value);
+
+            loader.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    audioSource.src = '/play/' + data.filename;
+                    audioPlayer.load();
+                    downloadBtn.href = '/download/' + data.filename;
+                    result.style.display = 'block';
+                } else {
+                    error.textContent = data.error || 'An error occurred';
+                    error.style.display = 'block';
+                }
+            } catch (err) {
+                error.textContent = 'Network error: ' + err.message;
+                error.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
